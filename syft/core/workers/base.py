@@ -395,8 +395,10 @@ class BaseWorker(ABC):
           the object to be returned.
 
         """
-
-        return self._objects[int(remote_key)]
+        obj = self._objects[int(remote_key)]
+        # Fix ownership if th obj has been modified out of control (like with backward())
+        torch_utils.enforce_owner(obj, self)
+        return obj
 
     def set_obj(self, remote_key, value, force=False, tmp=False):
         """
@@ -733,8 +735,7 @@ class BaseWorker(ABC):
             object.data.child.id = new_data_id
 
             if object.grad is None:
-                object.grad = sy.Variable(sy.zeros(object.size()))
-                object.grad.native_set_()
+                object.init_grad_()
 
             object.grad.child.id = new_grad_id
 
